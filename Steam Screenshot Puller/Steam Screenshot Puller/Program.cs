@@ -7,7 +7,8 @@ namespace SteamScreenShotPuller
     {
         // Collection of often used readonly items, containting regex expressions and link parts
         static readonly string profileUrl = "https://steamcommunity.com/id/";
-        static readonly string gridFilter = "/screenshots/?appid=0&sort=newestfirst&browsefilter=myfiles&view=grid";
+        static readonly string gridFilter = "/screenshots/?p=";
+        static readonly string gridFilterEnd = "&sort=newestfirst&browsefilter=myfiles&view=grid";
         static readonly string screenshotUrl = "https://steamcommunity.com/sharedfiles/filedetails/?id=";
         static readonly string imageWallExpr = "imgWallItem_\\d{10}";
         static readonly string idFilterExpr = "\\d{10}";
@@ -26,11 +27,16 @@ namespace SteamScreenShotPuller
         //Function to grab image IDs from screenshot grid
         private static List<string> getScreenshotList(string expr)
         {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Welcome to the Steam Screenshot Puller!");
+            Console.ForegroundColor = ConsoleColor.Gray;
             Console.WriteLine(@"Please enter the vanity ID of the profile.
 The Vanity ID can be found on the profile link.
 For example: https://steamcommunity.com/id/ActuallySin/ , here ActuallySin would be the ID.
 Vanity ID:");
-            string urlAddress = profileUrl + Console.ReadLine() + gridFilter;
+            string vanityId = "" + Console.ReadLine();
+            int pagination = 1;
+            string urlAddress = profileUrl + vanityId + gridFilter + pagination + gridFilterEnd;
             if (urlAddress == null)
             {
                 Console.WriteLine("The input was empty. Cancelling operation");
@@ -41,35 +47,52 @@ Vanity ID:");
             {
                 try
                 {
-                    string htmlCode = client.DownloadString(urlAddress);
-
-                    MatchCollection mc = Regex.Matches(htmlCode, expr);
-
+                    bool found = true;
                     string ImageSuperString = string.Empty;
-
-                    if(mc.Count > 0)
+                    List<string> linkList = new List<string>();
+                    while (found is true)
                     {
-                        foreach (Match match in mc)
+                        string htmlCode = client.DownloadString(urlAddress);
+
+                        if (Regex.IsMatch(htmlCode, expr) is true)
                         {
-                            ImageSuperString = ImageSuperString + match;
+                            Console.WriteLine($"Checking page {pagination}");
+
+                            MatchCollection mc = Regex.Matches(htmlCode, expr);
+
+                            foreach (Match match in mc)
+                            {
+                                ImageSuperString = ImageSuperString + match;
+                            }
+
+                            MatchCollection ids = Regex.Matches(ImageSuperString, idFilterExpr);
+
+                            foreach (Match id in ids)
+                            {
+                                string screenshotLink = screenshotUrl + id.Value;
+                                linkList.Add(screenshotLink);
+                            }
+                            pagination++;
+                            urlAddress = profileUrl + vanityId + gridFilter + pagination + gridFilterEnd;
                         }
-
-                        MatchCollection ids = Regex.Matches(ImageSuperString, idFilterExpr);
-                        List<string> linkList = new List<string>();
-
-                        foreach (Match id in ids)
+                        else
                         {
-                            string screenshotLink = screenshotUrl + id.Value;
-                            linkList.Add(screenshotLink);
+                            found = false;
                         }
-
-                        return linkList;
                     }
-
-                    else
+                    List<string> sanitizedLinkList = linkList.Distinct().ToList();
+                    if (sanitizedLinkList.Count == 0)
                     {
+                        Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine("This profile is either invalid, has no screenshots or is private");
+                        Console.ForegroundColor = ConsoleColor.Gray;
+                        return EmptyList;
+
                     }
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"Found a total of {sanitizedLinkList.Count} images.");
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    return sanitizedLinkList;
 
                 }
                 catch (WebException exp)
@@ -79,10 +102,7 @@ Vanity ID:");
                     return EmptyList;
                 }
                 
-            }
-
-            return EmptyList;
-            
+            } 
         }
 
         //Function to get the actual screenshots
@@ -137,12 +157,14 @@ Vanity ID:");
             List<string> exit = getScreenshotList(imageWallExpr);
             if (exit.Count == 0)
             {
-                Console.WriteLine("The Operation was not completes successfully.");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("The Operation failed.");
                 return (int)ExitCode.Failure;
             }
             else
             {
                 getScreenshots(exit);
+                Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("The Operation was successful");
                 return (int)ExitCode.Success;
             }
