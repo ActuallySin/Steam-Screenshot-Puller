@@ -115,7 +115,7 @@ Vanity ID:");
                             rString += ((char)(random.Next(1, 26) + 64)).ToString().ToLower();
                         }
 
-                        Console.WriteLine($"Downloading image {i} of {links.Count}");
+                        Console.WriteLine($"Downloading image {i+1} of {links.Count+1}");
 
                         // Downloads the image with a random name
                         string imageName = rString + i.ToString();
