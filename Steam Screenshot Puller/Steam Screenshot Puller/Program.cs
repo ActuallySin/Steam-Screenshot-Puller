@@ -1,9 +1,7 @@
-﻿using System;
-using System.Net;
-using System.Text;
+﻿using System.Net;
 using System.Text.RegularExpressions;
 
-namespace HelloWorld
+namespace SteamScreenShotPuller
 {
     class Program
     {
