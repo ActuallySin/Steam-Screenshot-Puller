@@ -158,14 +158,25 @@ Vanity ID:");
             if (exit.Count == 0)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("The Operation failed.");
-                return (int)ExitCode.Failure;
+                Console.WriteLine("The Operation failed. Rety ? Y / N");
+                string answer = String.Empty + Console.ReadLine();
+                if (answer.ToLower() == "y")
+                {
+                    Console.Clear();
+                    Main(args);
+                    return (int)ExitCode.Failure;
+                }
+                else
+                    Console.WriteLine("Closing application...");
+                Thread.Sleep(3000);
+                    return (int)ExitCode.Failure;
             }
             else
             {
                 getScreenshots(exit);
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("The Operation was successful");
+                Console.WriteLine("The Operation was successful. Closing in 10 seconds.");
+                Thread.Sleep(10000);
                 return (int)ExitCode.Success;
             }
         }
