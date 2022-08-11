@@ -127,21 +127,21 @@ ID: ");
                     Console.WriteLine(exp.Message);
                     return EmptyList;
                 }
-                
-            } 
+
+            }
         }
 
         //Function to get the actual screenshots
         private static void getScreenshots(List<string> links)
-        {   
+        {
             Console.WriteLine("Please enter a download location:");
             string downloadLocation = "" + Console.ReadLine();
 
             //enforced directory formatting
             if (downloadLocation.Contains("\\"))
-                {
+            {
                 downloadLocation.Replace("\\", "\\\\");
-                }
+            }
             if (!downloadLocation.EndsWith("\\") || !downloadLocation.EndsWith("/"))
             {
                 downloadLocation = downloadLocation + "\\";
@@ -161,7 +161,7 @@ ID: ");
                             rString += ((char)(random.Next(1, 26) + 64)).ToString().ToLower();
                         }
 
-                        Console.WriteLine($"Downloading image {i+1} of {links.Count+1}");
+                        Console.WriteLine($"Downloading image {i + 1} of {links.Count + 1}");
 
                         // Downloads the image with a random name
                         string imageName = rString + i.ToString();
@@ -179,7 +179,8 @@ ID: ");
         }
 
         static int Main(string[] args)
-        {;
+        {
+            ;
             List<string> exit = getScreenshotList(imageWallExpr);
             if (exit.Count == 0)
             {
@@ -195,7 +196,7 @@ ID: ");
                 else
                     Console.WriteLine("Closing application...");
                 Thread.Sleep(3000);
-                    return (int)ExitCode.Failure;
+                return (int)ExitCode.Failure;
             }
             else
             {
