@@ -40,6 +40,7 @@ Steam3 ID: [U:1:78871898]
 ID: ");
             int idType = 0;
             string vanityId = "" + Console.ReadLine();
+
             if (Regex.IsMatch(vanityId, "\\d{17}") is true || (Regex.IsMatch(vanityId, "\\[U:\\d:\\d{8}\\]") is true))
             {
                 idType = 1;
@@ -62,7 +63,7 @@ ID: ");
                 return EmptyList;
             }
 
-            using (WebClient client = new WebClient())
+            using (WebClient client = new())
             {
                 try
                 {
@@ -146,7 +147,7 @@ ID: ");
             {
                 downloadLocation = downloadLocation + "\\";
             }
-            using (WebClient client = new WebClient())
+            using (WebClient client = new())
             {
                 for (int i = 0; i < links.Count; i++)
                 {
