@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Text.RegularExpressions;
 
 namespace SteamScreenShotPuller
@@ -11,8 +11,8 @@ namespace SteamScreenShotPuller
         static readonly string gridFilter = "/screenshots/?p=";
         static readonly string gridFilterEnd = "&sort=newestfirst&browsefilter=myfiles&view=grid";
         static readonly string screenshotUrl = "https://steamcommunity.com/sharedfiles/filedetails/?id=";
-        static readonly string imageWallExpr = "imgWallItem_\\d{10}";
-        static readonly string idFilterExpr = "\\d{10}";
+        static readonly string imageWallExpr = "imgWallItem_\\d+";
+        static readonly string idFilterExpr = "\\d+";
         static readonly string imgLinkExpr = "https:\\/\\/steamuserimages-a\\.akamaihd\\.net\\/ugc\\/\\d+\\/(\\w*)\\/\\?imw=5000&imh=5000&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false";
         static readonly List<string> EmptyList = new List<string>();
 
