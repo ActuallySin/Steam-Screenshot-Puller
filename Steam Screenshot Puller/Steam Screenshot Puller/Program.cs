@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Text.RegularExpressions;
 
 namespace SteamScreenShotPuller
@@ -7,6 +7,7 @@ namespace SteamScreenShotPuller
     {
         // Collection of often used readonly items, containting regex expressions and link parts
         static readonly string profileUrl = "https://steamcommunity.com/id/";
+        static readonly string profileAltUrl = "https://steamcommunity.com/profiles/";
         static readonly string gridFilter = "/screenshots/?p=";
         static readonly string gridFilterEnd = "&sort=newestfirst&browsefilter=myfiles&view=grid";
         static readonly string screenshotUrl = "https://steamcommunity.com/sharedfiles/filedetails/?id=";
@@ -30,14 +31,32 @@ namespace SteamScreenShotPuller
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("Welcome to the Steam Screenshot Puller!");
             Console.ForegroundColor = ConsoleColor.Gray;
-            Console.WriteLine(@"Please enter the vanity ID of the profile.
-The Vanity ID can be found on the profile link.
-For example: https://steamcommunity.com/id/ActuallySin/ , here ActuallySin would be the ID.
-Vanity ID:");
+            Console.Write(@"Please enter the VanityID, SteamID or Steam3 ID of the profile.
+Possible Formats:
+VanityID: ActuallySin
+SteamID: 76561198039137626
+Steam3 ID: [U:1:78871898]
+
+ID: ");
+            int idType = 0;
             string vanityId = "" + Console.ReadLine();
+            if (Regex.IsMatch(vanityId, "\\d{17}") is true || (Regex.IsMatch(vanityId, "\\[U:\\d:\\d{8}\\]") is true))
+            {
+                idType = 1;
+            }
+
             int pagination = 1;
-            string urlAddress = profileUrl + vanityId + gridFilter + pagination + gridFilterEnd;
-            if (urlAddress == null)
+            string urlAddress = string.Empty;
+
+            if (idType == 1)
+            {
+                urlAddress = profileAltUrl + vanityId + gridFilter + pagination + gridFilterEnd;
+            }
+            else
+            {
+                urlAddress = profileUrl + vanityId + gridFilter + pagination + gridFilterEnd;
+            }
+            if (urlAddress == "")
             {
                 Console.WriteLine("The input was empty. Cancelling operation");
                 return EmptyList;
@@ -73,7 +92,14 @@ Vanity ID:");
                                 linkList.Add(screenshotLink);
                             }
                             pagination++;
-                            urlAddress = profileUrl + vanityId + gridFilter + pagination + gridFilterEnd;
+                            if (idType == 1)
+                            {
+                                urlAddress = profileAltUrl + vanityId + gridFilter + pagination + gridFilterEnd;
+                            }
+                            else
+                            {
+                                urlAddress = profileUrl + vanityId + gridFilter + pagination + gridFilterEnd;
+                            }
                         }
                         else
                         {
@@ -116,7 +142,7 @@ Vanity ID:");
                 {
                 downloadLocation.Replace("\\", "\\\\");
                 }
-            if (!downloadLocation.EndsWith("\\"))
+            if (!downloadLocation.EndsWith("\\") || !downloadLocation.EndsWith("/"))
             {
                 downloadLocation = downloadLocation + "\\";
             }
