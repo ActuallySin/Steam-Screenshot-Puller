@@ -152,19 +152,9 @@ ID: ");
                 {
                     try
                     {
-                        //Generates a random string to assign as image name
-                        Random random = new Random();
-                        int length = 16;
-                        string rString = "";
-                        for (int y = 0; y < length; y++)
-                        {
-                            rString += ((char)(random.Next(1, 26) + 64)).ToString().ToLower();
-                        }
-
                         Console.WriteLine($"Downloading image {i + 1} of {links.Count + 1}");
 
-                        // Downloads the image with a random name
-                        string imageName = rString + i.ToString();
+                        string imageName = Regex.Match(links[i], idFilterExpr).Value;
                         string html = client.DownloadString(links[i]);
                         string realImageLink = Regex.Match(html, imgLinkExpr).Value;
                         client.DownloadFile(new Uri(realImageLink), $"{downloadLocation}{imageName}.jpg");
