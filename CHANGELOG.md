@@ -1,3 +1,15 @@
+## v0.3
+
+### Added:
+- None
+
+### Changed:
+- Reformatted code
+- Replace deprecated WebClient with HttpClient
+
+### Removed:
+- None
+
 ## v0.2
 
 ### Added:
