@@ -1,23 +1,23 @@
 ﻿using System.Net;
 using System.Text.RegularExpressions;
 
-namespace SteamScreenShotPuller
+namespace Steam_ScreenShot_Puller
 {
-    class Program
+    internal static class Program
     {
-        // Collection of often used readonly items, containting regex expressions and link parts
-        static readonly string profileUrl = "https://steamcommunity.com/id/";
-        static readonly string profileAltUrl = "https://steamcommunity.com/profiles/";
-        static readonly string gridFilter = "/screenshots/?p=";
-        static readonly string gridFilterEnd = "&sort=newestfirst&browsefilter=myfiles&view=grid";
-        static readonly string screenshotUrl = "https://steamcommunity.com/sharedfiles/filedetails/?id=";
-        static readonly string imageWallExpr = "imgWallItem_\\d+";
-        static readonly string idFilterExpr = "\\d+";
-        static readonly string imgLinkExpr = "https:\\/\\/steamuserimages-a\\.akamaihd\\.net\\/ugc\\/\\d+\\/(\\w*)\\/\\?imw=5000&imh=5000&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false";
-        static readonly List<string> EmptyList = new List<string>();
+        // Collection of often used readonly items, containing regex expressions and link parts
+        private const string ProfileUrl = "https://steamcommunity.com/id/";
+        private const string ProfileAltUrl = "https://steamcommunity.com/profiles/";
+        private const string GridFilter = "/screenshots/?p=";
+        private const string GridFilterEnd = "&sort=newestfirst&browsefilter=myfiles&view=grid";
+        private const string ScreenshotUrl = "https://steamcommunity.com/sharedfiles/filedetails/?id=";
+        private const string ImageWallExpr = "imgWallItem_\\d+";
+        private const string IdFilterExpr = "\\d+";
+        private const string ImgLinkExpr = "https:\\/\\/steamuserimages-a\\.akamaihd\\.net\\/ugc\\/\\d+\\/(\\w*)\\/\\?imw=5000&imh=5000&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false";
+        private static readonly List<string> EmptyList = new List<string>();
 
         // Enums for exit codes
-        enum ExitCode : int
+        private enum ExitCode : int
         {
             Success = 0,
             Failure = 10,
@@ -26,7 +26,7 @@ namespace SteamScreenShotPuller
         }
 
         //Function to grab image IDs from screenshot grid
-        private static List<string> getScreenshotList(string expr)
+        private static List<string> GetScreenshotList(string expr)
         {
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("Welcome to the Steam Screenshot Puller!");
@@ -38,24 +38,24 @@ SteamID: 76561198039137626
 Steam3 ID: [U:1:78871898]
 
 ID: ");
-            int idType = 0;
-            string vanityId = "" + Console.ReadLine();
+            var idType = 0;
+            var vanityId = "" + Console.ReadLine();
 
             if (Regex.IsMatch(vanityId, "\\d{17}") is true || (Regex.IsMatch(vanityId, "\\[U:\\d:\\d{8}\\]") is true))
             {
                 idType = 1;
             }
 
-            int pagination = 1;
-            string urlAddress = string.Empty;
+            var pagination = 1;
+            string urlAddress;
 
             if (idType == 1)
             {
-                urlAddress = profileAltUrl + vanityId + gridFilter + pagination + gridFilterEnd;
+                urlAddress = ProfileAltUrl + vanityId + GridFilter + pagination + GridFilterEnd;
             }
             else
             {
-                urlAddress = profileUrl + vanityId + gridFilter + pagination + gridFilterEnd;
+                urlAddress = ProfileUrl + vanityId + GridFilter + pagination + GridFilterEnd;
             }
             if (urlAddress == "")
             {
@@ -63,121 +63,117 @@ ID: ");
                 return EmptyList;
             }
 
-            using (WebClient client = new())
+            using WebClient client = new();
+            try
             {
-                try
+                var found = true;
+                var imageSuperString = string.Empty;
+                var linkList = new List<string>();
+                while (found)
                 {
-                    bool found = true;
-                    string ImageSuperString = string.Empty;
-                    List<string> linkList = new List<string>();
-                    while (found is true)
+                    var htmlCode = client.DownloadString(urlAddress);
+
+                    if (Regex.IsMatch(htmlCode, expr))
                     {
-                        string htmlCode = client.DownloadString(urlAddress);
+                        Console.WriteLine($"Checking page {pagination}");
 
-                        if (Regex.IsMatch(htmlCode, expr) is true)
+                        var mc = Regex.Matches(htmlCode, expr);
+
+                        foreach (Match match in mc)
                         {
-                            Console.WriteLine($"Checking page {pagination}");
+                            imageSuperString = imageSuperString + match;
+                        }
 
-                            MatchCollection mc = Regex.Matches(htmlCode, expr);
+                        var ids = Regex.Matches(imageSuperString, IdFilterExpr);
 
-                            foreach (Match match in mc)
-                            {
-                                ImageSuperString = ImageSuperString + match;
-                            }
-
-                            MatchCollection ids = Regex.Matches(ImageSuperString, idFilterExpr);
-
-                            foreach (Match id in ids)
-                            {
-                                string screenshotLink = screenshotUrl + id.Value;
-                                linkList.Add(screenshotLink);
-                            }
-                            pagination++;
-                            if (idType == 1)
-                            {
-                                urlAddress = profileAltUrl + vanityId + gridFilter + pagination + gridFilterEnd;
-                            }
-                            else
-                            {
-                                urlAddress = profileUrl + vanityId + gridFilter + pagination + gridFilterEnd;
-                            }
+                        foreach (Match id in ids)
+                        {
+                            var screenshotLink = ScreenshotUrl + id.Value;
+                            linkList.Add(screenshotLink);
+                        }
+                        pagination++;
+                        if (idType == 1)
+                        {
+                            urlAddress = ProfileAltUrl + vanityId + GridFilter + pagination + GridFilterEnd;
                         }
                         else
                         {
-                            found = false;
+                            urlAddress = ProfileUrl + vanityId + GridFilter + pagination + GridFilterEnd;
                         }
                     }
-                    List<string> sanitizedLinkList = linkList.Distinct().ToList();
-                    if (sanitizedLinkList.Count == 0)
+                    else
                     {
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("This profile is either invalid, has no screenshots or is private");
-                        Console.ForegroundColor = ConsoleColor.Gray;
-                        return EmptyList;
-
+                        found = false;
                     }
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine($"Found a total of {sanitizedLinkList.Count} images.");
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                    return sanitizedLinkList;
-
                 }
-                catch (WebException exp)
+                var sanitizedLinkList = linkList.Distinct().ToList();
+                if (sanitizedLinkList.Count == 0)
                 {
-                    Console.WriteLine("Error processing the URL, is it the correct format ?");
-                    Console.WriteLine(exp.Message);
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("This profile is either invalid, has no screenshots or is private");
+                    Console.ForegroundColor = ConsoleColor.Gray;
                     return EmptyList;
-                }
 
+                }
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"Found a total of {sanitizedLinkList.Count} images.");
+                Console.ForegroundColor = ConsoleColor.Gray;
+                return sanitizedLinkList;
+
+            }
+            catch (WebException exp)
+            {
+                Console.WriteLine("Error processing the URL, is it the correct format ?");
+                Console.WriteLine(exp.Message);
+                return EmptyList;
             }
         }
 
         //Function to get the actual screenshots
-        private static void getScreenshots(List<string> links)
+        private static void GetScreenshots(List<string> links)
         {
             Console.WriteLine("Please enter a download location:");
-            string downloadLocation = "" + Console.ReadLine();
+            var downloadLocation = "" + Console.ReadLine();
 
             //enforced directory formatting
             if (downloadLocation.Contains("\\"))
             {
-                downloadLocation.Replace("\\", "\\\\");
+                downloadLocation = downloadLocation.Replace("\\", "\\\\");
             }
             if (!downloadLocation.EndsWith("\\") || !downloadLocation.EndsWith("/"))
             {
-                downloadLocation = downloadLocation + "\\";
+                downloadLocation += "\\";
             }
-            using (WebClient client = new())
-            {
-                for (int i = 0; i < links.Count; i++)
-                {
-                    try
-                    {
-                        Console.WriteLine($"Downloading image {i + 1} of {links.Count + 1}");
 
-                        string imageName = Regex.Match(links[i], idFilterExpr).Value;
-                        string html = client.DownloadString(links[i]);
-                        string realImageLink = Regex.Match(html, imgLinkExpr).Value;
-                        client.DownloadFile(new Uri(realImageLink), $"{downloadLocation}{imageName}.jpg");
-                        Thread.Sleep(1000);
-                    }
-                    catch (WebException exp)
-                    {
-                        Console.WriteLine(exp.Message);
-                    }
+            using WebClient client = new();
+            for (var i = 0; i < links.Count; i++)
+            {
+                try
+                {
+                    Console.WriteLine($"Downloading image {i + 1} of {links.Count + 1}");
+
+                    var imageName = Regex.Match(links[i], IdFilterExpr).Value;
+                    var html = client.DownloadString(links[i]);
+                    var realImageLink = Regex.Match(html, ImgLinkExpr).Value;
+                    client.DownloadFile(new Uri(realImageLink), $"{downloadLocation}{imageName}.jpg");
+                    Thread.Sleep(1000);
+                }
+                catch (WebException exp)
+                {
+                    Console.WriteLine(exp.Message);
                 }
             }
         }
 
-        static int Main(string[] args)
+        private static int Main(string[] args)
         {
             ;
-            List<string> exit = getScreenshotList(imageWallExpr);
+            var exit = GetScreenshotList(ImageWallExpr);
             if (exit.Count == 0)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("The Operation failed. Rety ? Y / N");
-                string answer = String.Empty + Console.ReadLine();
+                Console.WriteLine("The Operation failed. Retry ? Y / N");
+                var answer = string.Empty + Console.ReadLine();
                 if (answer.ToLower() == "y")
                 {
                     Console.Clear();
@@ -191,7 +187,7 @@ ID: ");
             }
             else
             {
-                getScreenshots(exit);
+                GetScreenshots(exit);
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("The Operation was successful. Closing in 10 seconds.");
                 Thread.Sleep(10000);
