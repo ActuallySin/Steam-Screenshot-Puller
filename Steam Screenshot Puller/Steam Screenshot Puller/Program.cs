@@ -17,16 +17,16 @@ namespace Steam_ScreenShot_Puller
         private static readonly List<string> EmptyList = new List<string>();
 
         // Enums for exit codes
-        private enum ExitCode : int
+        private enum ExitCode
         {
             Success = 0,
             Failure = 10,
-            InvalidUrl = -1,
-            UnknownError = -2,
+            //InvalidUrl = -1,
+            //UnknownError = -2,
         }
 
         //Function to grab image IDs from screenshot grid
-        private static List<string> GetScreenshotList(string expr)
+        private static List<string> GetScreenshotList(string expr, HttpClient client)
         {
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("Welcome to the Steam Screenshot Puller!");
@@ -41,7 +41,7 @@ ID: ");
             var idType = 0;
             var vanityId = "" + Console.ReadLine();
 
-            if (Regex.IsMatch(vanityId, "\\d{17}") is true || (Regex.IsMatch(vanityId, "\\[U:\\d:\\d{8}\\]") is true))
+            if (Regex.IsMatch(vanityId, "\\d{17}") || (Regex.IsMatch(vanityId, "\\[U:\\d:\\d{8}\\]")))
             {
                 idType = 1;
             }
@@ -62,8 +62,7 @@ ID: ");
                 Console.WriteLine("The input was empty. Cancelling operation");
                 return EmptyList;
             }
-
-            using WebClient client = new();
+            
             try
             {
                 var found = true;
@@ -71,7 +70,9 @@ ID: ");
                 var linkList = new List<string>();
                 while (found)
                 {
-                    var htmlCode = client.DownloadString(urlAddress);
+                    var response = client.GetAsync(urlAddress).Result;
+                    var content = response.Content;
+                    var htmlCode = content.ReadAsStringAsync().Result;
 
                     if (Regex.IsMatch(htmlCode, expr))
                     {
@@ -130,13 +131,13 @@ ID: ");
         }
 
         //Function to get the actual screenshots
-        private static void GetScreenshots(List<string> links)
+        private static async Task GetScreenshots(IReadOnlyList<string> links, HttpClient client)
         {
             Console.WriteLine("Please enter a download location:");
             var downloadLocation = "" + Console.ReadLine();
 
             //enforced directory formatting
-            if (downloadLocation.Contains("\\"))
+            if (downloadLocation.Contains('\\'))
             {
                 downloadLocation = downloadLocation.Replace("\\", "\\\\");
             }
@@ -144,8 +145,7 @@ ID: ");
             {
                 downloadLocation += "\\";
             }
-
-            using WebClient client = new();
+            
             for (var i = 0; i < links.Count; i++)
             {
                 try
@@ -153,9 +153,14 @@ ID: ");
                     Console.WriteLine($"Downloading image {i + 1} of {links.Count + 1}");
 
                     var imageName = Regex.Match(links[i], IdFilterExpr).Value;
-                    var html = client.DownloadString(links[i]);
+                    var response = client.GetAsync(links[i]).Result;
+                    var content = response.Content;
+                    var html = content.ReadAsStringAsync().Result;
                     var realImageLink = Regex.Match(html, ImgLinkExpr).Value;
-                    client.DownloadFile(new Uri(realImageLink), $"{downloadLocation}{imageName}.jpg");
+                    var fileUrl = await client.GetAsync(realImageLink);
+                    var resultStream = await fileUrl.Content.ReadAsStreamAsync();
+                    var fileStream = File.Create($"{downloadLocation}{imageName}.jpg");
+                    await resultStream.CopyToAsync(fileStream);
                     Thread.Sleep(1000);
                 }
                 catch (WebException exp)
@@ -165,10 +170,10 @@ ID: ");
             }
         }
 
-        private static int Main(string[] args)
+        private static async Task<int> Main()
         {
-            ;
-            var exit = GetScreenshotList(ImageWallExpr);
+            var client = new HttpClient();
+            var exit = GetScreenshotList(ImageWallExpr, client);
             if (exit.Count == 0)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
@@ -177,17 +182,17 @@ ID: ");
                 if (answer.ToLower() == "y")
                 {
                     Console.Clear();
-                    Main(args);
+                    await Main();
                     return (int)ExitCode.Failure;
                 }
                 else
                     Console.WriteLine("Closing application...");
-                Thread.Sleep(3000);
+                Thread.Sleep(1000);
                 return (int)ExitCode.Failure;
             }
             else
             {
-                GetScreenshots(exit);
+                await GetScreenshots(exit, client);
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("The Operation was successful. Closing in 10 seconds.");
                 Thread.Sleep(10000);
