@@ -3,6 +3,8 @@
 
 .vs
 
+relase-out
+
 # User-specific files
 *.suo
 *.user

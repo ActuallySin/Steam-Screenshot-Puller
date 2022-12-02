@@ -1,5 +1,12 @@
-﻿using System.Net;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Steam_ScreenShot_Puller
 {
@@ -170,7 +177,7 @@ ID: ");
             }
         }
 
-        private static async Task<int> Main()
+        private static async Task<int> Main(string[] args)
         {
             var client = new HttpClient();
             var exit = GetScreenshotList(ImageWallExpr, client);
@@ -182,7 +189,7 @@ ID: ");
                 if (answer.ToLower() == "y")
                 {
                     Console.Clear();
-                    await Main();
+                    await Main(Array.Empty<string>());
                     return (int)ExitCode.Failure;
                 }
                 else
